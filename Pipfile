@@ -8,6 +8,9 @@ aiohttp = "~=3.7.4"
 "discord.py" = "~=1.6.0"
 
 [dev-packages]
+flake8 = "~=3.8.3"
+flake8-annotations = "~=2.3.0"
+flake8-import-order = "~=0.18.1"
 
 [requires]
 python_version = "3.9"
