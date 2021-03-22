@@ -3,3 +3,6 @@
 
 # Application secrets
 .env
+
+# Application logs
+logs
