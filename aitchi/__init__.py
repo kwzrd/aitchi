@@ -20,7 +20,7 @@ fmt = logging.Formatter(
 handle_console = logging.StreamHandler()  # Defaults to stdout
 handle_file = logging.FileHandler(log_file, encoding="UTF-8")
 
-# We listen for all levels
+# We listen for all levels by default
 root_log = logging.getLogger()
 root_log.setLevel(logging.DEBUG)
 
@@ -29,3 +29,8 @@ for handler in (handle_console, handle_file):
     root_log.addHandler(handler)
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(fmt)
+
+# Bump levels of noisy 3rd party loggers
+to_raise = ("asyncio", "discord")
+for log_name in to_raise:
+    logging.getLogger(log_name).setLevel(logging.WARNING)
