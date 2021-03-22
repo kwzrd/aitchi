@@ -5,6 +5,7 @@ class _Env:
     """Configuration set via environment variables."""
 
     token: str  # Discord bot credentials
+    prefix: str  # Command prefix
 
     def __init__(self) -> None:
         """
