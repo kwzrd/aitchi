@@ -17,3 +17,4 @@ python_version = "3.9"
 
 [scripts]
 aitchi = "python -m aitchi"
+lint = "python -m flake8"
