@@ -28,3 +28,15 @@ class Aitchi(commands.Bot):
         self.http_session = aiohttp.ClientSession(connector=connector)
 
         super().__init__(*args, **kwargs)
+
+    async def close(self) -> None:
+        """
+        Close HTTP session.
+
+        The resource should be released before the event loop closes.
+        """
+        log.info("Closing Aitchi instance")
+
+        await self.http_session.close()
+
+        await super().close()
