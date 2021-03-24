@@ -6,3 +6,6 @@
 
 # Application logs
 logs
+
+# JSON managed by the persistence module
+database.json
