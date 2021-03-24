@@ -11,14 +11,18 @@ class _Env:
         """
         Grab annotated attributes from environment variables.
 
+        Each attribute is converted to their annotated type. It is therefore not possible to dynamically load an
+        arbitrary type ~ only those that can be automatically instantiated from a string repr.
+
         Raises an exception if not all attributes are found.
         """
         missing = []
 
-        for attribute in self.__annotations__:
+        for attribute, annotated_type in self.__annotations__.items():
             lookup_name = attribute.upper()
             if (value := os.getenv(lookup_name)) is not None:
-                setattr(self, attribute, value)
+                typed_value = annotated_type(value)
+                setattr(self, attribute, typed_value)
             else:
                 missing.append(attribute)
 
