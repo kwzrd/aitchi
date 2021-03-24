@@ -1,7 +1,7 @@
 import logging
 import typing as t
 
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 from aitchi.aitchi import Aitchi
 from aitchi.config import Env
@@ -18,12 +18,19 @@ class Config:
 
 
 class TikTok(commands.Cog):
-    """TikTok notifications."""
+    """
+    TikTok notifications.
+
+    This extension is responsible for polling TikTok for new videos from the configured user. When a new video
+    is found, a notification is sent to the configured channel.
+    """
 
     def __init__(self, bot: Aitchi) -> None:
-        """Initialise store."""
+        """Initialise store & start daemon."""
         self.bot = bot
         self.store = Store(namespace="tiktok")
+
+        self.daemon.start()
 
     async def fetch_videos(self) -> t.Dict[str, t.Any]:
         """
@@ -85,6 +92,36 @@ class TikTok(commands.Cog):
         self.store.set("seen_videos", seen_videos + new_videos)
 
         return new_videos
+
+    @tasks.loop(minutes=5)
+    async def daemon(self) -> None:
+        """
+        Periodically fetch new videos and send them to the configured channel.
+
+        This function orchestrates the extension.
+        """
+        log.info("Daemon awakens: checking for new videos")
+
+        new_videos = await self.get_new_videos()
+
+        if not new_videos:
+            log.debug("Daemon pass complete: no new videos")
+            return
+
+        log.info("New videos found, sending notification")
+
+        await self.bot.wait_until_ready()
+        channel = self.bot.get_channel(733635779603070998)
+
+        if channel is None:
+            log.warning("Cannot send notification, target channel not found!")
+            return
+
+        for video_id in new_videos:
+            tiktok_url = f"https://www.tiktok.com/@charlixcx/video/{video_id}"
+            await channel.send(f"New TikTok: {tiktok_url}")
+
+        log.debug("Daemon pass complete: notifications sent")
 
 
 def setup(bot: Aitchi) -> None:
