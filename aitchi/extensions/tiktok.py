@@ -1,6 +1,10 @@
+import logging
+
 from discord.ext import commands
 
 from aitchi.aitchi import Aitchi
+
+log = logging.getLogger(__name__)
 
 
 class TikTok(commands.Cog):
