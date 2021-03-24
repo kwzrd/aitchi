@@ -42,13 +42,21 @@ class Store:
         """
         self.namespace = namespace
 
+    def __repr__(self) -> str:
+        """
+        String representation.
+
+        This is primarily useful for logging.
+        """
+        return f"Store(namespace={self.namespace!r})"
+
     def get(self, key: str, default: t.Optional[Value] = None) -> Value:
         """
         Retrieve the value of `key` from the namespace.
 
         Return `default` if not found.
         """
-        log.debug(f"Store({self.namespace}) getting {key!r} with default of {default!r}")
+        log.debug(f"{self} getting {key!r} with default of {default!r}")
 
         try:
             return read()[self.namespace][key]
@@ -61,7 +69,7 @@ class Store:
 
         If `key` already exists, it will be overwritten.
         """
-        log.debug(f"Store({self.namespace}) setting {key!r} to {value!r}")
+        log.debug(f"{self} setting {key!r} to {value!r}")
 
         db = read()
 
