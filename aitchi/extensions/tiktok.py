@@ -8,6 +8,13 @@ from aitchi.persistence import Store
 log = logging.getLogger(__name__)
 
 
+class Config:
+    """Extension configuration."""
+
+    tiktok_user = "MS4wLjABAAAAok8FiOPFZg5o8vKv-oxSwYuM-gbhKldv_1_nnPAZQ1XdqeTJkUcuoz6SAjSdzcmr"
+    notification_channel = 733635779603070998
+
+
 class TikTok(commands.Cog):
     """TikTok notifications."""
 
