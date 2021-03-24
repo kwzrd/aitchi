@@ -73,7 +73,7 @@ class TikTok(commands.Cog):
         log.debug("Videos fetched, checking for attributes")
 
         try:
-            video_ids = [video["id"] for video in resp["itemList"]]
+            video_ids = [int(video["id"]) for video in resp["itemList"]]
         except KeyError as lookup_exc:
             log.error("Missing attribute in response!", exc_info=lookup_exc)
             return []
