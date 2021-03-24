@@ -7,6 +7,8 @@ class _Env:
     token: str  # Discord bot credentials
     prefix: str  # Command prefix
 
+    tiktok_aid: int  # TikTok application ID
+
     def __init__(self) -> None:
         """
         Grab annotated attributes from environment variables.
