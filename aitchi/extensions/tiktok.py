@@ -26,6 +26,23 @@ class TikTok(commands.Cog):
 
         self.daemon.start()
 
+    async def report_error(self, exception: Exception) -> None:
+        """
+        Send an error report to the configured log channel.
+
+        The `exception` message will be included.
+        """
+        log.debug(f"Dispatching error report for exception of type: {type(exception)}")
+
+        await self.bot.wait_until_ready()
+        log_channel: t.Optional[discord.TextChannel] = self.bot.get_channel(Config.log_channel)
+
+        if log_channel is None:
+            log.critical(f"Failed to acquire configured log channel: {Config.log_channel} not found!")
+            return
+
+        await log_channel.send(f"TikTok daemon stopped due to exception:\n```{exception}```")
+
     async def fetch_videos(self) -> t.Dict[str, t.Any]:
         """
         Poll TikTok API for the last 10 videos from the configured user.
@@ -106,6 +123,7 @@ class TikTok(commands.Cog):
         except Exception as exc:
             log.error("Daemon encountered an unhandled exception and will stop!", exc_info=exc)
             self.daemon.stop()
+            await self.report_error(exc)
         else:
             log.debug("Daemon pass complete")
 
