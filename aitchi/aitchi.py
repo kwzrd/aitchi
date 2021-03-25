@@ -5,7 +5,7 @@ from datetime import datetime
 import aiohttp
 from discord.ext import commands
 
-from aitchi.config import Env
+from aitchi.config import Config
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class Aitchi(commands.Bot):
         connector = aiohttp.TCPConnector(resolver=aiohttp.AsyncResolver(), family=socket.AF_INET)
         self.http_session = aiohttp.ClientSession(connector=connector)
 
-        super().__init__(command_prefix=Env.prefix, help_command=None)
+        super().__init__(command_prefix=Config.bot_prefix, help_command=None)
 
     async def close(self) -> None:
         """

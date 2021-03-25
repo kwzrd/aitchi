@@ -9,3 +9,6 @@ logs
 
 # JSON managed by the persistence module
 database.json
+
+# Local configuration
+aitchi/config/environments/development.json
