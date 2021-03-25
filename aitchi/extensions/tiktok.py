@@ -1,6 +1,7 @@
 import logging
 import typing as t
 
+import discord
 from discord.ext import commands, tasks
 
 from aitchi.aitchi import Aitchi
@@ -31,90 +32,82 @@ class TikTok(commands.Cog):
 
         Raises an exception on non-200 responses. Otherwise, the JSON response is returned as a Python object.
         """
-        log.info("Polling API for videos!")
+        log.debug("Polling TikTok API for recent videos!")
 
         params = {
             "count": 10,  # How many videos to get
             "cursor": 0,  # Starting from 0th video, i.e. last 10
-            "aid": Secrets.tiktok_aid,  # Application ID
-            "secUid": Config.tiktok_user,  # Target user
+            "aid": Secrets.tiktok_id,  # Application ID
+            "secUid": Config.tiktok_target,  # Target user
         }
         async with self.bot.http_session.get("https://m.tiktok.com/api/post/item_list", params=params) as resp:
             if resp.status != 200:
                 raise Exception(f"Failed to get video list due to status: {resp.status}")
             return await resp.json()
 
-    async def get_new_videos(self) -> t.List[int]:
+    async def daemon_main(self) -> None:
         """
-        Get a list of previously unseen video IDs.
+        Check for previously unseen videos and notify the configured channel.
 
-        First we poll the API for the last 10 videos. Any IDs present in the response but not present in the
-        persistent store will be persisted for later and returned. This means that this function will only
-        return each video ID exactly once.
+        This function is implemented naively. An unexpected response from the API will cause an exception to propagate
+        to the caller.
 
-        In the case that the persistent store is completely empty, we init it with the current 10 videos
-        and return an empty list. This will only happen in the maiden case.
+        We depend on the persistence module to remember already seen videos. In the case that the store is empty,
+        we populate it with the current videos. This indicates the maiden case and requires special behaviour to
+        avoid sending notifications retroactively.
         """
-        log.info("Getting new videos!")
+        log.debug("Daemon main: fetching video list")
 
-        try:
-            resp = await self.fetch_videos()
-        except Exception as fetch_exc:
-            log.error("Failed to fetch videos!", exc_info=fetch_exc)
-            return []
+        resp = await self.fetch_videos()
 
-        log.debug("Videos fetched, checking for attributes")
+        recent_videos = [int(video["id"]) for video in resp["itemList"]]
+        seen_videos = self.store.get("seen_videos")
 
-        try:
-            video_ids = [int(video["id"]) for video in resp["itemList"]]
-        except KeyError as lookup_exc:
-            log.error("Missing attribute in response!", exc_info=lookup_exc)
-            return []
+        if seen_videos is None:
+            log.debug("Daemon main: store is empty, caching recent videos (maiden case)")
+            self.store.set("seen_videos", recent_videos)
+            return
 
-        seen_videos = self.store.get("seen_videos", [])
-        log.debug(f"Fetched {len(video_ids)} videos, comparing against {len(seen_videos)} videos from store")
+        new_videos = [video for video in recent_videos if video not in seen_videos]
 
-        if len(seen_videos) == 0:
-            log.debug("Maiden case: initialising store with response")
-            self.store.set("seen_videos", video_ids)
-            return []
+        if not new_videos:
+            log.debug("Daemon main: found no unseen videos")
+            return
 
-        new_videos = [video_id for video_id in video_ids if video_id not in seen_videos]
-        log.debug(f"Found {len(new_videos)} new videos")
+        log.debug(f"Found {len(new_videos)} new videos!")
 
-        self.store.set("seen_videos", seen_videos + new_videos)
+        await self.bot.wait_until_ready()  # Ensure cache is ready before we grab the channel
+        notification_channel: t.Optional[discord.TextChannel] = self.bot.get_channel(Config.notification_channel)
 
-        return new_videos
+        if notification_channel is None:
+            raise Exception(f"Failed to acquire configured notification channel: {Config.notification_channel}")
+
+        log.debug(f"Sending notifications to: #{notification_channel.name}")
+
+        for new_video in new_videos:
+            tiktok_url = f"https://www.tiktok.com/@charlixcx/video/{new_video}"
+            await notification_channel.send(f"New **TikTok**! {tiktok_url}")
+
+        log.debug("Caching new videos")
+        self.store.set("seen_videos", seen_videos + recent_videos)
 
     @tasks.loop(minutes=5)
     async def daemon(self) -> None:
         """
-        Periodically fetch new videos and send them to the configured channel.
+        Periodically call `daemon_main`.
 
-        This function orchestrates the extension.
+        If an exception propagates out of the main, the daemon will send an alert to the configured log channel
+        and stop itself. This will generally happen if the API returns an unexpected response.
         """
-        log.info("Daemon awakens: checking for new videos")
+        log.info("Daemon: invoking main")
 
-        new_videos = await self.get_new_videos()
-
-        if not new_videos:
-            log.debug("Daemon pass complete: no new videos")
-            return
-
-        log.info("New videos found, sending notification")
-
-        await self.bot.wait_until_ready()
-        channel = self.bot.get_channel(733635779603070998)
-
-        if channel is None:
-            log.warning("Cannot send notification, target channel not found!")
-            return
-
-        for video_id in new_videos:
-            tiktok_url = f"https://www.tiktok.com/@charlixcx/video/{video_id}"
-            await channel.send(f"New TikTok: {tiktok_url}")
-
-        log.debug("Daemon pass complete: notifications sent")
+        try:
+            await self.daemon_main()
+        except Exception as exc:
+            log.error("Daemon encountered an unhandled exception and will stop!", exc_info=exc)
+            self.daemon.stop()
+        else:
+            log.debug("Daemon pass complete")
 
 
 def setup(bot: Aitchi) -> None:
