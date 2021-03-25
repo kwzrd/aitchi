@@ -103,7 +103,7 @@ class TikTok(commands.Cog):
 
         for new_video in new_videos:
             tiktok_url = f"https://www.tiktok.com/@charlixcx/video/{new_video}"
-            await notification_channel.send(f"New **TikTok**! {tiktok_url}")
+            await notification_channel.send(f"New TikTok: {tiktok_url}")
 
         log.debug("Caching new videos")
         self.store.set("seen_videos", seen_videos + recent_videos)
