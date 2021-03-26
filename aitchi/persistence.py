@@ -56,7 +56,7 @@ class Store:
 
         Return `default` if not found.
         """
-        log.debug(f"{self} getting {key!r} with default of {default!r}")
+        log.debug(f"Get namespace {self.namespace!r} (key: {key!r}, default: {default!r})")
 
         try:
             return read()[self.namespace][key]
@@ -69,7 +69,7 @@ class Store:
 
         If `key` already exists, it will be overwritten.
         """
-        log.debug(f"{self} setting {key!r} to {value!r}")
+        log.debug(f"Set namespace {self.namespace!r} (key: {key!r}, value: {value!r})")
 
         db = read()
 
