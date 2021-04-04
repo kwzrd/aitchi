@@ -31,6 +31,7 @@ class _Config:
     log_channel: int  # Send important application logs here
 
     tiktok_target: str  # Target TikTok user ID
+    tiktok_logo: str  # CDN URL
 
     def __init__(self, load_from: Path) -> None:
         """Load attributes from JSON file at `load_from`."""

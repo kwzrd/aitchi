@@ -3,5 +3,6 @@
     "bot_prefix": "*",
     "notification_channel": 569897415960952853,
     "log_channel": 733631125594832907,
-    "tiktok_target": "MS4wLjABAAAAok8FiOPFZg5o8vKv-oxSwYuM-gbhKldv_1_nnPAZQ1XdqeTJkUcuoz6SAjSdzcmr"
+    "tiktok_target": "MS4wLjABAAAAok8FiOPFZg5o8vKv-oxSwYuM-gbhKldv_1_nnPAZQ1XdqeTJkUcuoz6SAjSdzcmr",
+    "tiktok_logo": "https://cdn.discordapp.com/attachments/746790524567945277/827634209601486928/8e1d1cee4879db1796c87f0a620afe6a.png"
 }
