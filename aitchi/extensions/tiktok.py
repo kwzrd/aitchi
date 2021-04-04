@@ -23,12 +23,40 @@ class TikTokVideo:
     """Remote video representation."""
 
     id: t.Annotated[str, "video", "id"]
+    description: t.Annotated[str, "desc"]
+
+    auth_id: t.Annotated[str, "author", "uniqueId"]
+    auth_avatar: t.Annotated[str, "author", "avatarThumb"]
+    auth_nickname: t.Annotated[str, "author", "nickname"]
 
     def __init__(self, dictionary: dict[str, t.Any]) -> None:
         """Initialise instance from `dictionary`."""
         for attr_name, annotation in self.__annotations__.items():
             value = deep_lookup(dictionary, annotation.__metadata__)
             setattr(self, attr_name, value)
+
+    @property
+    def auth_url(self) -> str:
+        """Construct URL for the author's page."""
+        return f"https://www.tiktok.com/@{self.auth_id}"
+
+    @property
+    def video_url(self) -> str:
+        """Construct URL for the video's page."""
+        return f"{self.auth_url}/video/{self.id}"
+
+    @property
+    def embed(self) -> discord.Embed:
+        """Construct Discord embed representation."""
+        embed = discord.Embed(
+            title="New TikTok video!",
+            description=f"{self.description}"[:2048],
+            colour=discord.Colour(0xFAFAFA),
+            url=self.video_url,
+        )
+        embed.set_author(name=self.auth_nickname, url=self.auth_url, icon_url=self.auth_avatar)
+        embed.set_footer(text="TikTok", icon_url=Config.tiktok_logo)
+        return embed
 
 
 class TikTok(commands.Cog):
@@ -119,8 +147,7 @@ class TikTok(commands.Cog):
         log.debug(f"Sending notifications to: #{notification_channel.name}")
 
         for new_video in new_videos:
-            tiktok_url = f"https://www.tiktok.com/@charlixcx/video/{new_video.id}"
-            await notification_channel.send(f"New TikTok: {tiktok_url}")
+            await notification_channel.send(embed=new_video.embed)
 
         log.debug("Caching new videos")
         self.store.set("seen_videos", [video.id for video in new_videos] + seen_video_ids)
