@@ -63,11 +63,11 @@ class TikTok(commands.Cog):
 
         await log_channel.send(f"TikTok daemon stopped due to exception:\n```{exception}```")
 
-    async def fetch_videos(self) -> t.Dict[str, t.Any]:
+    async def fetch_videos(self) -> list[TikTokVideo]:
         """
         Poll TikTok API for the last 10 videos from the configured user.
 
-        Raises an exception on non-200 responses. Otherwise, the JSON response is returned as a Python object.
+        Raise exception on non-200 responses, or when the response lacks expected keys.
         """
         log.debug("Polling TikTok API for recent videos!")
 
@@ -80,32 +80,29 @@ class TikTok(commands.Cog):
         async with self.bot.http_session.get("https://m.tiktok.com/api/post/item_list", params=params) as resp:
             if resp.status != 200:
                 raise Exception(f"Failed to get video list due to status: {resp.status}")
-            return await resp.json()
+
+            log.debug("Fetch successful, parsing JSON response")
+            payload = await resp.json()
+
+        return [TikTokVideo(item) for item in payload["itemList"]]
 
     async def daemon_main(self) -> None:
         """
         Check for previously unseen videos and notify the configured channel.
 
-        This function is implemented naively. An unexpected response from the API will cause an exception to propagate
-        to the caller.
-
-        We depend on the persistence module to remember already seen videos. In the case that the store is empty,
-        we populate it with the current videos. This indicates the maiden case and requires special behaviour to
-        avoid sending notifications retroactively.
+        Propagate exceptions in unexpected cases. The caller is responsible for error handling.
         """
         log.debug("Daemon main: fetching video list")
 
-        resp = await self.fetch_videos()
+        recent_videos = await self.fetch_videos()
+        seen_video_ids: list[str] = self.store.get("seen_videos")
 
-        recent_videos = [int(video["id"]) for video in resp["itemList"]]
-        seen_videos = self.store.get("seen_videos")
-
-        if seen_videos is None:
+        if seen_video_ids is None:
             log.debug("Daemon main: store is empty, caching recent videos (maiden case)")
-            self.store.set("seen_videos", recent_videos)
+            self.store.set("seen_videos", [video.id for video in recent_videos])
             return
 
-        new_videos = [video for video in recent_videos if video not in seen_videos]
+        new_videos = [video for video in recent_videos if video.id not in seen_video_ids]
 
         if not new_videos:
             log.debug("Daemon main: found no unseen videos")
@@ -122,11 +119,11 @@ class TikTok(commands.Cog):
         log.debug(f"Sending notifications to: #{notification_channel.name}")
 
         for new_video in new_videos:
-            tiktok_url = f"https://www.tiktok.com/@charlixcx/video/{new_video}"
+            tiktok_url = f"https://www.tiktok.com/@charlixcx/video/{new_video.id}"
             await notification_channel.send(f"New TikTok: {tiktok_url}")
 
         log.debug("Caching new videos")
-        self.store.set("seen_videos", seen_videos + recent_videos)
+        self.store.set("seen_videos", seen_video_ids + [video.id for video in new_videos])
 
     @tasks.loop(minutes=10)
     async def daemon(self) -> None:
