@@ -123,7 +123,7 @@ class TikTok(commands.Cog):
             await notification_channel.send(f"New TikTok: {tiktok_url}")
 
         log.debug("Caching new videos")
-        self.store.set("seen_videos", seen_video_ids + [video.id for video in new_videos])
+        self.store.set("seen_videos", [video.id for video in new_videos] + seen_video_ids)
 
     @tasks.loop(minutes=10)
     async def daemon(self) -> None:
