@@ -10,6 +10,8 @@ on:
 
 jobs:
   checks:
+
+    name: Checks
     runs-on: ubuntu-18.04
 
     steps:
@@ -22,7 +24,7 @@ jobs:
           python-version: 3.9
 
       - name: Install Pipenv
-        uses: dschep/install-pipenv-action@v1
+        run: python -m pip install pipenv
 
       - name: Install dependencies
         run: pipenv sync --dev
