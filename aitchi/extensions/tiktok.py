@@ -11,6 +11,14 @@ from aitchi.persistence import Store
 log = logging.getLogger(__name__)
 
 
+def deep_lookup(mapping: t.Mapping, path: t.Iterable[t.Hashable]) -> t.Any:
+    """Fetch value at `path` in `mapping`."""
+    value = mapping
+    for item in path:
+        value = value[item]
+    return value
+
+
 class TikTok(commands.Cog):
     """
     TikTok notifications.
