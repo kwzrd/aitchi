@@ -19,6 +19,18 @@ def deep_lookup(mapping: t.Mapping, path: t.Iterable[t.Hashable]) -> t.Any:
     return value
 
 
+class TikTokVideo:
+    """Remote video representation."""
+
+    id: t.Annotated[str, "video", "id"]
+
+    def __init__(self, dictionary: dict[str, t.Any]) -> None:
+        """Initialise instance from `dictionary`."""
+        for attr_name, annotation in self.__annotations__.items():
+            value = deep_lookup(dictionary, annotation.__metadata__)
+            setattr(self, attr_name, value)
+
+
 class TikTok(commands.Cog):
     """
     TikTok notifications.
