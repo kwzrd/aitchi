@@ -34,3 +34,31 @@ for handler in (handle_console, handle_file):
 to_raise = ("asyncio", "discord")
 for log_name in to_raise:
     logging.getLogger(log_name).setLevel(logging.WARNING)
+
+log = logging.getLogger(__name__)
+
+
+def _age(path: Path) -> int:
+    """
+    Calculate age of log file at `path` in days.
+
+    The creation timestamp is extracted from the ISO filename.
+    """
+    created_at = datetime.fromisoformat(path.stem)
+    difference = datetime.utcnow() - created_at
+
+    return difference.days
+
+
+def _prune(after_days: int = 30) -> None:
+    """Prune existing logs older than `after_days`."""
+    log.debug(f"Pruning logs directory (after days: {after_days})")
+
+    eligible = [file for file in log_dir.glob("*.log") if _age(file) > after_days and file != log_file]
+    log.debug(f"Removing {len(eligible)} logs")
+
+    for file in eligible:
+        file.unlink()
+
+
+_prune()
