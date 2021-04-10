@@ -155,7 +155,7 @@ class TikTok(commands.Cog):
         log.debug("Caching new videos")
         self.store.set("seen_videos", [video.id for video in new_videos] + seen_video_ids)
 
-    @tasks.loop(minutes=10)
+    @tasks.loop(minutes=30)
     async def daemon(self) -> None:
         """
         Periodically call `daemon_main`.
