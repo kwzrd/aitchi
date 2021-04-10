@@ -89,7 +89,7 @@ class TikTok(commands.Cog):
             log.critical(f"Failed to acquire configured log channel: {Config.log_channel} not found!")
             return
 
-        await log_channel.send(f"TikTok daemon stopped due to exception:\n```{exception}```")
+        await log_channel.send(f"TikTok daemon encountered exception:\n```{exception}```")
 
     async def fetch_videos(self) -> list[TikTokVideo]:
         """
@@ -157,16 +157,15 @@ class TikTok(commands.Cog):
         """
         Periodically call `daemon_main`.
 
-        If an exception propagates out of the main, the daemon will send an alert to the configured log channel
-        and stop itself. This will generally happen if the API returns an unexpected response.
+        If an exception propagates out of the main, send an alert to the configured log channel. This will generally
+        happen if the API returns an unexpected response.
         """
         log.info("Daemon: invoking main")
 
         try:
             await self.daemon_main()
         except Exception as exc:
-            log.error("Daemon encountered an unhandled exception and will stop!", exc_info=exc)
-            self.daemon.stop()
+            log.error("Daemon encountered an unhandled exception!", exc_info=exc)
             await self.report_error(exc)
         else:
             log.debug("Daemon pass complete")
