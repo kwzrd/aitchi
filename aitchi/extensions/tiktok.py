@@ -112,7 +112,9 @@ class TikTok(commands.Cog):
             log.debug("Fetch successful, parsing JSON response")
             payload = await resp.json()
 
-        log.debug(f"Loading videos from JSON payload: {payload}")
+        if "itemList" not in payload:
+            raise Exception(f"Response payload lacks 'itemList' key: {payload}")
+
         return [TikTokVideo(item) for item in payload["itemList"]]
 
     async def daemon_main(self) -> None:
